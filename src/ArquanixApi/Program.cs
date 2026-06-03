@@ -1,4 +1,6 @@
+using ArquanixApi.Data;
 using ArquanixApi.Services;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +16,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Almacén de clientes en memoria (CRUD inicial).
+builder.Services.AddDbContext<ArquanixDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 builder.Services.AddSingleton<IClientStore, InMemoryClientStore>();
 builder.Services.AddSingleton<IClaimStore, InMemoryClaimStore>();
 
