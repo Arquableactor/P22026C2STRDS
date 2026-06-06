@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ArquanixApi.Migrations
 {
     [DbContext(typeof(ArquanixDbContext))]
-    [Migration("20260603224850_InitialCreate")]
+    [Migration("20260606181326_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
