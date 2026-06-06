@@ -23,7 +23,6 @@ public class ClientsController : ControllerBase
         return Ok(_store.GetAll());
     }
 
-    /// <summary>Consulta un cliente por su Id.</summary>
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(Client), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
