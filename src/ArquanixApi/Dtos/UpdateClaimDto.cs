@@ -1,9 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using ArquanixApi.Models;
 
-namespace ArquanixApi.Models;
+namespace ArquanixApi.Dtos;
 
 
-public class ClaimRequest
+public class UpdateClaimDto
 {
     [Required(ErrorMessage = "El ClientId es obligatorio.")]
     [Range(1, int.MaxValue, ErrorMessage = "El ClientId debe ser un identificador válido.")]

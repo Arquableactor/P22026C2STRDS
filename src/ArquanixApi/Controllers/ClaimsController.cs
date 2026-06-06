@@ -1,3 +1,4 @@
+using ArquanixApi.Dtos;
 using ArquanixApi.Models;
 using ArquanixApi.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -19,51 +20,51 @@ public class ClaimsController : ControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<Claim>), StatusCodes.Status200OK)]
-    public ActionResult<IEnumerable<Claim>> GetAll()
+    [ProducesResponseType(typeof(IEnumerable<ClaimDto>), StatusCodes.Status200OK)]
+    public ActionResult<IEnumerable<ClaimDto>> GetAll()
     {
-        return Ok(_store.GetAll());
+        return Ok(_store.GetAll().Select(ToDto));
     }
 
     [HttpGet("{id:int}")]
-    [ProducesResponseType(typeof(Claim), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ClaimDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<Claim> GetById(int id)
+    public ActionResult<ClaimDto> GetById(int id)
     {
         var claim = _store.GetById(id);
-        return claim is null ? NotFound() : Ok(claim);
+        return claim is null ? NotFound() : Ok(ToDto(claim));
     }
 
     [HttpPost]
-    [ProducesResponseType(typeof(Claim), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ClaimDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<Claim> Create([FromBody] ClaimRequest request)
+    public ActionResult<ClaimDto> Create([FromBody] CreateClaimDto dto)
     {
-        if (_clientStore.GetById(request.ClientId) is null)
+        if (_clientStore.GetById(dto.ClientId) is null)
         {
-            ModelState.AddModelError(nameof(request.ClientId), "El cliente indicado no existe.");
+            ModelState.AddModelError(nameof(dto.ClientId), "El cliente indicado no existe.");
             return ValidationProblem(ModelState);
         }
 
         var claim = new Claim
         {
-            ClientId = request.ClientId,
-            Title = request.Title,
-            Description = request.Description,
-            Status = request.Status,
-            Priority = request.Priority,
-            ClosedAt = request.Status == ClaimStatus.Closed ? DateTime.UtcNow : null,
+            ClientId = dto.ClientId,
+            Title = dto.Title,
+            Description = dto.Description,
+            Status = dto.Status,
+            Priority = dto.Priority,
+            ClosedAt = dto.Status == ClaimStatus.Closed ? DateTime.UtcNow : null,
         };
 
         var created = _store.Add(claim);
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, ToDto(created));
     }
 
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult Update(int id, [FromBody] ClaimRequest request)
+    public IActionResult Update(int id, [FromBody] UpdateClaimDto dto)
     {
         var existing = _store.GetById(id);
         if (existing is null)
@@ -71,18 +72,18 @@ public class ClaimsController : ControllerBase
             return NotFound();
         }
 
-        if (_clientStore.GetById(request.ClientId) is null)
+        if (_clientStore.GetById(dto.ClientId) is null)
         {
-            ModelState.AddModelError(nameof(request.ClientId), "El cliente indicado no existe.");
+            ModelState.AddModelError(nameof(dto.ClientId), "El cliente indicado no existe.");
             return ValidationProblem(ModelState);
         }
 
-        existing.ClientId = request.ClientId;
-        existing.Title = request.Title;
-        existing.Description = request.Description;
-        existing.Priority = request.Priority;
-        existing.Status = request.Status;
-        existing.ClosedAt = request.Status == ClaimStatus.Closed
+        existing.ClientId = dto.ClientId;
+        existing.Title = dto.Title;
+        existing.Description = dto.Description;
+        existing.Priority = dto.Priority;
+        existing.Status = dto.Status;
+        existing.ClosedAt = dto.Status == ClaimStatus.Closed
             ? existing.ClosedAt ?? DateTime.UtcNow
             : null;
 
@@ -97,4 +98,16 @@ public class ClaimsController : ControllerBase
     {
         return _store.Delete(id) ? NoContent() : NotFound();
     }
+
+    private static ClaimDto ToDto(Claim claim) => new()
+    {
+        Id = claim.Id,
+        ClientId = claim.ClientId,
+        Title = claim.Title,
+        Description = claim.Description,
+        Status = claim.Status,
+        Priority = claim.Priority,
+        CreatedAt = claim.CreatedAt,
+        ClosedAt = claim.ClosedAt,
+    };
 }
