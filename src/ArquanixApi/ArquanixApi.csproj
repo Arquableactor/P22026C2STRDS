@@ -15,4 +15,9 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Arquanix.Domain\Arquanix.Domain.csproj" />
+    <ProjectReference Include="..\Arquanix.Infrastructure\Arquanix.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>
