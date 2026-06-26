@@ -1,4 +1,4 @@
-using ArquanixApi.Models;
+using Arquanix.Domain.Entities;
 
 namespace ArquanixApi.Dtos;
 

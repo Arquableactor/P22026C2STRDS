@@ -1,4 +1,4 @@
-namespace ArquanixApi.Models;
+namespace Arquanix.Domain.Entities;
 
 
 public class Claim
