@@ -1,5 +1,5 @@
 using ArquanixApi.Dtos;
-using ArquanixApi.Models;
+using Arquanix.Domain.Entities;
 using ArquanixApi.Services;
 using Microsoft.AspNetCore.Mvc;
 

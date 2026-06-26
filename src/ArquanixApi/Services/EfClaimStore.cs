@@ -1,5 +1,5 @@
 using ArquanixApi.Data;
-using ArquanixApi.Models;
+using Arquanix.Domain.Entities;
 
 namespace ArquanixApi.Services;
 

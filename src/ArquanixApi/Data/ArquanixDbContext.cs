@@ -1,4 +1,4 @@
-using ArquanixApi.Models;
+using Arquanix.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace ArquanixApi.Data;

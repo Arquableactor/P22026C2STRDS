@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using ArquanixApi.Models;
+using Arquanix.Domain.Entities;
 
 namespace ArquanixApi.Dtos;
 
