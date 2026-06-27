@@ -1,4 +1,4 @@
-using ArquanixApi.Data;
+using Arquanix.Infrastructure.Context;
 using ArquanixApi.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,7 +13,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<ArquanixDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlite(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlite => sqlite.MigrationsAssembly("ArquanixApi")));
 
 builder.Services.AddScoped<IClientStore, EfClientStore>();
 builder.Services.AddScoped<IClaimStore, EfClaimStore>();

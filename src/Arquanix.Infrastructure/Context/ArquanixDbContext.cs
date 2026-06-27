@@ -1,7 +1,7 @@
 using Arquanix.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace ArquanixApi.Data;
+namespace Arquanix.Infrastructure.Context;
 
 
 public class ArquanixDbContext : DbContext

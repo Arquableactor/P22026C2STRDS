@@ -1,4 +1,4 @@
-using ArquanixApi.Data;
+using Arquanix.Infrastructure.Context;
 using Arquanix.Domain.Entities;
 
 namespace ArquanixApi.Services;
