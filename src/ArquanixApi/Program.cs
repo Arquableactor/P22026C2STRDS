@@ -1,5 +1,6 @@
 using Arquanix.Infrastructure.Context;
-using ArquanixApi.Services;
+using Arquanix.Infrastructure.Interfaces;
+using Arquanix.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,8 +18,8 @@ builder.Services.AddDbContext<ArquanixDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection"),
         sqlite => sqlite.MigrationsAssembly("ArquanixApi")));
 
-builder.Services.AddScoped<IClientStore, EfClientStore>();
-builder.Services.AddScoped<IClaimStore, EfClaimStore>();
+builder.Services.AddScoped<IClientRepository, ClientRepository>();
+builder.Services.AddScoped<IClaimRepository, ClaimRepository>();
 
 var app = builder.Build();
 
