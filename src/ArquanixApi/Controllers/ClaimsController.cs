@@ -1,6 +1,6 @@
 using ArquanixApi.Dtos;
 using Arquanix.Domain.Entities;
-using ArquanixApi.Services;
+using Arquanix.Infrastructure.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ArquanixApi.Controllers;
@@ -10,37 +10,38 @@ namespace ArquanixApi.Controllers;
 [Produces("application/json")]
 public class ClaimsController : ControllerBase
 {
-    private readonly IClaimStore _store;
-    private readonly IClientStore _clientStore;
+    private readonly IClaimRepository _repository;
+    private readonly IClientRepository _clientRepository;
 
-    public ClaimsController(IClaimStore store, IClientStore clientStore)
+    public ClaimsController(IClaimRepository repository, IClientRepository clientRepository)
     {
-        _store = store;
-        _clientStore = clientStore;
+        _repository = repository;
+        _clientRepository = clientRepository;
     }
 
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<ClaimDto>), StatusCodes.Status200OK)]
-    public ActionResult<IEnumerable<ClaimDto>> GetAll()
+    public async Task<ActionResult<IEnumerable<ClaimDto>>> GetAll()
     {
-        return Ok(_store.GetAll().Select(ToDto));
+        var claims = await _repository.GetAllAsync();
+        return Ok(claims.Select(ToDto));
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(ClaimDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<ClaimDto> GetById(int id)
+    public async Task<ActionResult<ClaimDto>> GetById(int id)
     {
-        var claim = _store.GetById(id);
+        var claim = await _repository.GetByIdAsync(id);
         return claim is null ? NotFound() : Ok(ToDto(claim));
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(ClaimDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<ClaimDto> Create([FromBody] CreateClaimDto dto)
+    public async Task<ActionResult<ClaimDto>> Create([FromBody] CreateClaimDto dto)
     {
-        if (_clientStore.GetById(dto.ClientId) is null)
+        if (!await _clientRepository.ExistsAsync(dto.ClientId))
         {
             ModelState.AddModelError(nameof(dto.ClientId), "El cliente indicado no existe.");
             return ValidationProblem(ModelState);
@@ -56,7 +57,7 @@ public class ClaimsController : ControllerBase
             ClosedAt = dto.Status == ClaimStatus.Closed ? DateTime.UtcNow : null,
         };
 
-        var created = _store.Add(claim);
+        var created = await _repository.CreateAsync(claim);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, ToDto(created));
     }
 
@@ -64,15 +65,15 @@ public class ClaimsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult Update(int id, [FromBody] UpdateClaimDto dto)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateClaimDto dto)
     {
-        var existing = _store.GetById(id);
+        var existing = await _repository.GetByIdAsync(id);
         if (existing is null)
         {
             return NotFound();
         }
 
-        if (_clientStore.GetById(dto.ClientId) is null)
+        if (!await _clientRepository.ExistsAsync(dto.ClientId))
         {
             ModelState.AddModelError(nameof(dto.ClientId), "El cliente indicado no existe.");
             return ValidationProblem(ModelState);
@@ -87,16 +88,16 @@ public class ClaimsController : ControllerBase
             ? existing.ClosedAt ?? DateTime.UtcNow
             : null;
 
-        _store.Update(existing);
+        await _repository.UpdateAsync(existing);
         return NoContent();
     }
 
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult Delete(int id)
+    public async Task<IActionResult> Delete(int id)
     {
-        return _store.Delete(id) ? NoContent() : NotFound();
+        return await _repository.DeleteAsync(id) ? NoContent() : NotFound();
     }
 
     private static ClaimDto ToDto(Claim claim) => new()

@@ -1,6 +1,6 @@
 using ArquanixApi.Dtos;
 using Arquanix.Domain.Entities;
-using ArquanixApi.Services;
+using Arquanix.Infrastructure.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ArquanixApi.Controllers;
@@ -10,33 +10,34 @@ namespace ArquanixApi.Controllers;
 [Produces("application/json")]
 public class ClientsController : ControllerBase
 {
-    private readonly IClientStore _store;
+    private readonly IClientRepository _repository;
 
-    public ClientsController(IClientStore store)
+    public ClientsController(IClientRepository repository)
     {
-        _store = store;
+        _repository = repository;
     }
 
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<ClientDto>), StatusCodes.Status200OK)]
-    public ActionResult<IEnumerable<ClientDto>> GetAll()
+    public async Task<ActionResult<IEnumerable<ClientDto>>> GetAll()
     {
-        return Ok(_store.GetAll().Select(ToDto));
+        var clients = await _repository.GetAllAsync();
+        return Ok(clients.Select(ToDto));
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(ClientDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<ClientDto> GetById(int id)
+    public async Task<ActionResult<ClientDto>> GetById(int id)
     {
-        var client = _store.GetById(id);
+        var client = await _repository.GetByIdAsync(id);
         return client is null ? NotFound() : Ok(ToDto(client));
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(ClientDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<ClientDto> Create([FromBody] CreateClientDto dto)
+    public async Task<ActionResult<ClientDto>> Create([FromBody] CreateClientDto dto)
     {
         var client = new Client
         {
@@ -46,7 +47,7 @@ public class ClientsController : ControllerBase
             IsActive = dto.IsActive,
         };
 
-        var created = _store.Add(client);
+        var created = await _repository.CreateAsync(client);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, ToDto(created));
     }
 
@@ -54,9 +55,9 @@ public class ClientsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult Update(int id, [FromBody] UpdateClientDto dto)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateClientDto dto)
     {
-        var existing = _store.GetById(id);
+        var existing = await _repository.GetByIdAsync(id);
         if (existing is null)
         {
             return NotFound();
@@ -67,16 +68,16 @@ public class ClientsController : ControllerBase
         existing.Phone = dto.Phone;
         existing.IsActive = dto.IsActive;
 
-        _store.Update(existing);
+        await _repository.UpdateAsync(existing);
         return NoContent();
     }
 
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult Delete(int id)
+    public async Task<IActionResult> Delete(int id)
     {
-        return _store.Delete(id) ? NoContent() : NotFound();
+        return await _repository.DeleteAsync(id) ? NoContent() : NotFound();
     }
 
     private static ClientDto ToDto(Client client) => new()
