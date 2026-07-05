@@ -1,3 +1,5 @@
+using Arquanix.Application.Contract;
+using Arquanix.Application.Service;
 using Arquanix.Infrastructure.Context;
 using Arquanix.Infrastructure.Interfaces;
 using Arquanix.Infrastructure.Repositories;
@@ -20,6 +22,9 @@ builder.Services.AddDbContext<ArquanixDbContext>(options =>
 
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
 builder.Services.AddScoped<IClaimRepository, ClaimRepository>();
+
+builder.Services.AddScoped<IClientService, ClientService>();
+builder.Services.AddScoped<IClaimService, ClaimService>();
 
 var app = builder.Build();
 

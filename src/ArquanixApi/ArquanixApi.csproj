@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Arquanix.Application\Arquanix.Application.csproj" />
     <ProjectReference Include="..\Arquanix.Domain\Arquanix.Domain.csproj" />
     <ProjectReference Include="..\Arquanix.Infrastructure\Arquanix.Infrastructure.csproj" />
   </ItemGroup>

@@ -1,12 +1,10 @@
 using Arquanix.Domain.Entities;
 
-namespace ArquanixApi.Dtos;
+namespace Arquanix.Application.Dtos.Claims;
 
 
-public class ClaimDto
+public class ClaimDto : DtoBase
 {
-    public int Id { get; set; }
-
     public int ClientId { get; set; }
 
     public string Title { get; set; } = string.Empty;
@@ -16,8 +14,6 @@ public class ClaimDto
     public ClaimStatus Status { get; set; }
 
     public ClaimPriority Priority { get; set; }
-
-    public DateTime CreatedAt { get; set; }
 
     public DateTime? ClosedAt { get; set; }
 }
