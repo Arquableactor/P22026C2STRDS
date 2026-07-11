@@ -1,6 +1,5 @@
-using ArquanixApi.Dtos;
-using Arquanix.Domain.Entities;
-using Arquanix.Infrastructure.Interfaces;
+using Arquanix.Application.Contract;
+using Arquanix.Application.Dtos.Claims;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ArquanixApi.Controllers;
@@ -8,23 +7,21 @@ namespace ArquanixApi.Controllers;
 [ApiController]
 [Route("api/claims")]
 [Produces("application/json")]
-public class ClaimsController : ControllerBase
+public class ClaimsController : ApiControllerBase
 {
-    private readonly IClaimRepository _repository;
-    private readonly IClientRepository _clientRepository;
+    private readonly IClaimService _service;
 
-    public ClaimsController(IClaimRepository repository, IClientRepository clientRepository)
+    public ClaimsController(IClaimService service)
     {
-        _repository = repository;
-        _clientRepository = clientRepository;
+        _service = service;
     }
 
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<ClaimDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<ClaimDto>>> GetAll()
     {
-        var claims = await _repository.GetAllAsync();
-        return Ok(claims.Select(ToDto));
+        var result = await _service.GetAllAsync();
+        return Ok(result.Data);
     }
 
     [HttpGet("{id:int}")]
@@ -32,8 +29,8 @@ public class ClaimsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ClaimDto>> GetById(int id)
     {
-        var claim = await _repository.GetByIdAsync(id);
-        return claim is null ? NotFound() : Ok(ToDto(claim));
+        var result = await _service.GetByIdAsync(id);
+        return result.Success ? Ok(result.Data) : HandleFailure(result);
     }
 
     [HttpPost]
@@ -41,24 +38,13 @@ public class ClaimsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ClaimDto>> Create([FromBody] CreateClaimDto dto)
     {
-        if (!await _clientRepository.ExistsAsync(dto.ClientId))
+        var result = await _service.CreateAsync(dto);
+        if (!result.Success)
         {
-            ModelState.AddModelError(nameof(dto.ClientId), "El cliente indicado no existe.");
-            return ValidationProblem(ModelState);
+            return HandleFailure(result);
         }
 
-        var claim = new Claim
-        {
-            ClientId = dto.ClientId,
-            Title = dto.Title,
-            Description = dto.Description,
-            Status = dto.Status,
-            Priority = dto.Priority,
-            ClosedAt = dto.Status == ClaimStatus.Closed ? DateTime.UtcNow : null,
-        };
-
-        var created = await _repository.CreateAsync(claim);
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, ToDto(created));
+        return CreatedAtAction(nameof(GetById), new { id = result.Data!.Id }, result.Data);
     }
 
     [HttpPut("{id:int}")]
@@ -67,29 +53,8 @@ public class ClaimsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateClaimDto dto)
     {
-        var existing = await _repository.GetByIdAsync(id);
-        if (existing is null)
-        {
-            return NotFound();
-        }
-
-        if (!await _clientRepository.ExistsAsync(dto.ClientId))
-        {
-            ModelState.AddModelError(nameof(dto.ClientId), "El cliente indicado no existe.");
-            return ValidationProblem(ModelState);
-        }
-
-        existing.ClientId = dto.ClientId;
-        existing.Title = dto.Title;
-        existing.Description = dto.Description;
-        existing.Priority = dto.Priority;
-        existing.Status = dto.Status;
-        existing.ClosedAt = dto.Status == ClaimStatus.Closed
-            ? existing.ClosedAt ?? DateTime.UtcNow
-            : null;
-
-        await _repository.UpdateAsync(existing);
-        return NoContent();
+        var result = await _service.UpdateAsync(id, dto);
+        return result.Success ? NoContent() : HandleFailure(result);
     }
 
     [HttpDelete("{id:int}")]
@@ -97,18 +62,7 @@ public class ClaimsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id)
     {
-        return await _repository.DeleteAsync(id) ? NoContent() : NotFound();
+        var result = await _service.DeleteAsync(id);
+        return result.Success ? NoContent() : HandleFailure(result);
     }
-
-    private static ClaimDto ToDto(Claim claim) => new()
-    {
-        Id = claim.Id,
-        ClientId = claim.ClientId,
-        Title = claim.Title,
-        Description = claim.Description,
-        Status = claim.Status,
-        Priority = claim.Priority,
-        CreatedAt = claim.CreatedAt,
-        ClosedAt = claim.ClosedAt,
-    };
 }
