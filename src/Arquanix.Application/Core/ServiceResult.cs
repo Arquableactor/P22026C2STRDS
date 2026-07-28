@@ -21,6 +21,9 @@ public class ServiceResult
 
     public static ServiceResult NotFound() => new() { Status = ServiceResultStatus.NotFound };
 
+    public static ServiceResult Invalid(string error) =>
+        new() { Status = ServiceResultStatus.ValidationError, Errors = new List<string> { error } };
+
     public static ServiceResult Invalid(IEnumerable<string> errors) =>
         new() { Status = ServiceResultStatus.ValidationError, Errors = errors.ToList() };
 }
@@ -35,6 +38,9 @@ public class ServiceResult<T> : ServiceResult
 
     public static new ServiceResult<T> NotFound() =>
         new() { Status = ServiceResultStatus.NotFound };
+
+    public static new ServiceResult<T> Invalid(string error) =>
+        new() { Status = ServiceResultStatus.ValidationError, Errors = new List<string> { error } };
 
     public static new ServiceResult<T> Invalid(IEnumerable<string> errors) =>
         new() { Status = ServiceResultStatus.ValidationError, Errors = errors.ToList() };
