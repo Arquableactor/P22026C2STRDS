@@ -35,14 +35,14 @@ public class ClaimService : IClaimService
     public async Task<ServiceResult<ClaimDto>> CreateAsync(CreateClaimDto dto)
     {
         var errors = Validate(dto.ClientId, dto.Title, dto.Description, dto.Status, dto.Priority);
-        if (errors.Count == 0 && !await _clientRepository.ExistsAsync(dto.ClientId))
-        {
-            errors.Add("El cliente indicado no existe.");
-        }
-
         if (errors.Count > 0)
         {
             return ServiceResult<ClaimDto>.Invalid(errors);
+        }
+
+        if (!await _clientRepository.ExistsAsync(dto.ClientId))
+        {
+            return ServiceResult<ClaimDto>.Invalid("El cliente indicado no existe.");
         }
 
         var claim = new Claim
@@ -52,8 +52,12 @@ public class ClaimService : IClaimService
             Description = dto.Description,
             Status = dto.Status,
             Priority = dto.Priority,
-            ClosedAt = dto.Status == ClaimStatus.Closed ? DateTime.UtcNow : null,
         };
+
+        if (dto.Status == ClaimStatus.Closed)
+        {
+            claim.Close();
+        }
 
         var created = await _repository.CreateAsync(claim);
         return ServiceResult<ClaimDto>.Ok(ToDto(created));
@@ -68,24 +72,30 @@ public class ClaimService : IClaimService
         }
 
         var errors = Validate(dto.ClientId, dto.Title, dto.Description, dto.Status, dto.Priority);
-        if (errors.Count == 0 && !await _clientRepository.ExistsAsync(dto.ClientId))
-        {
-            errors.Add("El cliente indicado no existe.");
-        }
-
         if (errors.Count > 0)
         {
             return ServiceResult.Invalid(errors);
+        }
+
+        if (!await _clientRepository.ExistsAsync(dto.ClientId))
+        {
+            return ServiceResult.Invalid("El cliente indicado no existe.");
         }
 
         existing.ClientId = dto.ClientId;
         existing.Title = dto.Title;
         existing.Description = dto.Description;
         existing.Priority = dto.Priority;
-        existing.Status = dto.Status;
-        existing.ClosedAt = dto.Status == ClaimStatus.Closed
-            ? existing.ClosedAt ?? DateTime.UtcNow
-            : null;
+
+        if (dto.Status == ClaimStatus.Closed)
+        {
+            existing.Close(existing.ClosedAt ?? DateTime.UtcNow);
+        }
+        else
+        {
+            existing.Status = dto.Status;
+            existing.ClosedAt = null;
+        }
 
         await _repository.UpdateAsync(existing);
         return ServiceResult.Ok();
