@@ -18,9 +18,9 @@ public class ClientsController : ApiControllerBase
 
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<ClientDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<ClientDto>>> GetAll()
+    public async Task<ActionResult<IEnumerable<ClientDto>>> GetAll([FromQuery] bool? activos, [FromQuery] string? busqueda)
     {
-        var result = await _service.GetAllAsync();
+        var result = await _service.GetAllAsync(activos, busqueda);
         return Ok(result.Data);
     }
 

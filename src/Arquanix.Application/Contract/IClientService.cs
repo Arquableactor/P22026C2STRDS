@@ -6,7 +6,7 @@ namespace Arquanix.Application.Contract;
 
 public interface IClientService
 {
-    Task<ServiceResult<List<ClientDto>>> GetAllAsync();
+    Task<ServiceResult<List<ClientDto>>> GetAllAsync(bool? activos = null, string? busqueda = null);
 
     Task<ServiceResult<ClientDto>> GetByIdAsync(int id);
 

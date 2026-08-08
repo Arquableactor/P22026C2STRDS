@@ -11,24 +11,50 @@ namespace Arquanix.Application.Service;
 public class ClientService : IClientService
 {
     private readonly IClientRepository _repository;
+    private readonly IClaimRepository _claimRepository;
 
-    public ClientService(IClientRepository repository)
+    public ClientService(IClientRepository repository, IClaimRepository claimRepository)
     {
         _repository = repository;
+        _claimRepository = claimRepository;
     }
 
-    public async Task<ServiceResult<List<ClientDto>>> GetAllAsync()
+    public async Task<ServiceResult<List<ClientDto>>> GetAllAsync(bool? activos = null, string? busqueda = null)
     {
         var clients = await _repository.GetAllAsync();
-        return ServiceResult<List<ClientDto>>.Ok(clients.Select(ToDto).ToList());
+
+        if (activos == true)
+        {
+            clients = clients.Where(c => c.IsActive).ToList();
+        }
+
+        if (!string.IsNullOrWhiteSpace(busqueda))
+        {
+            var termino = busqueda.Trim().ToLowerInvariant();
+            clients = clients
+                .Where(c => c.Name.ToLowerInvariant().Contains(termino)
+                    || c.Email.ToLowerInvariant().Contains(termino))
+                .ToList();
+        }
+
+        var vigentesPorCliente = await VigentesPorClienteAsync();
+        var dtos = clients
+            .Select(c => ToDto(c, vigentesPorCliente.GetValueOrDefault(c.Id)))
+            .ToList();
+
+        return ServiceResult<List<ClientDto>>.Ok(dtos);
     }
 
     public async Task<ServiceResult<ClientDto>> GetByIdAsync(int id)
     {
         var client = await _repository.GetByIdAsync(id);
-        return client is null
-            ? ServiceResult<ClientDto>.NotFound()
-            : ServiceResult<ClientDto>.Ok(ToDto(client));
+        if (client is null)
+        {
+            return ServiceResult<ClientDto>.NotFound();
+        }
+
+        var vigentesPorCliente = await VigentesPorClienteAsync();
+        return ServiceResult<ClientDto>.Ok(ToDto(client, vigentesPorCliente.GetValueOrDefault(client.Id)));
     }
 
     public async Task<ServiceResult<ClientDto>> CreateAsync(CreateClientDto dto)
@@ -48,7 +74,7 @@ public class ClientService : IClientService
         };
 
         var created = await _repository.CreateAsync(client);
-        return ServiceResult<ClientDto>.Ok(ToDto(created));
+        return ServiceResult<ClientDto>.Ok(ToDto(created, 0));
     }
 
     public async Task<ServiceResult> UpdateAsync(int id, UpdateClientDto dto)
@@ -80,6 +106,15 @@ public class ClientService : IClientService
         return deleted ? ServiceResult.Ok() : ServiceResult.NotFound();
     }
 
+    private async Task<Dictionary<int, int>> VigentesPorClienteAsync()
+    {
+        var claims = await _claimRepository.GetAllAsync();
+        return claims
+            .Where(c => c.Status == ClaimStatus.Open || c.Status == ClaimStatus.InProgress)
+            .GroupBy(c => c.ClientId)
+            .ToDictionary(g => g.Key, g => g.Count());
+    }
+
     private static List<string> Validate(string name, string email, string? phone)
     {
         var errors = new List<string>();
@@ -102,7 +137,7 @@ public class ClientService : IClientService
         return errors;
     }
 
-    private static ClientDto ToDto(Client client) => new()
+    private static ClientDto ToDto(Client client, int reclamosVigentes) => new()
     {
         Id = client.Id,
         Name = client.Name,
@@ -110,5 +145,7 @@ public class ClientService : IClientService
         Phone = client.Phone,
         IsActive = client.IsActive,
         CreatedAt = client.CreatedAt,
+        Rol = "Cliente",
+        ReclamosVigentes = reclamosVigentes,
     };
 }

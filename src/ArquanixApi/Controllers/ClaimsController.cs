@@ -1,5 +1,6 @@
 using Arquanix.Application.Contract;
 using Arquanix.Application.Dtos.Claims;
+using Arquanix.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ArquanixApi.Controllers;
@@ -18,9 +19,17 @@ public class ClaimsController : ApiControllerBase
 
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<ClaimDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<ClaimDto>>> GetAll()
+    public async Task<ActionResult<IEnumerable<ClaimDto>>> GetAll([FromQuery] int? clientId, [FromQuery] ClaimStatus? status)
     {
-        var result = await _service.GetAllAsync();
+        var result = await _service.GetAllAsync(clientId, status);
+        return Ok(result.Data);
+    }
+
+    [HttpGet("stats")]
+    [ProducesResponseType(typeof(ClaimStatsDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ClaimStatsDto>> GetStats()
+    {
+        var result = await _service.GetStatsAsync();
         return Ok(result.Data);
     }
 

@@ -16,4 +16,10 @@ public class ClaimDto : DtoBase
     public ClaimPriority Priority { get; set; }
 
     public DateTime? ClosedAt { get; set; }
+
+    public string? ClientName { get; set; }
+
+    public int DiasDeAtencion { get; set; }
+
+    public string Resumen { get; set; } = string.Empty;
 }
